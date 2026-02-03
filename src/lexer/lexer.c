@@ -48,6 +48,9 @@ bool isOperator(char chr){
 
 
 bool isValidIdentifier(char* str ){
+    if(str == NULL) return false;
+    if(!strlen(str)) return false;
+
     int len = strlen(str);
 
     int i = 0;
@@ -92,7 +95,6 @@ bool isValidIdentifier(char* str ){
         i++;
     }
 
-
     return true;
 }
 
@@ -118,6 +120,37 @@ bool isKeyword(char* str){
     return false;
 }
 
+
+bool isFloat(char *str){
+    if (str == NULL || *str == '\0') {
+        return false;
+    }
+
+    int i = 0; 
+    while (isdigit(str[i])){
+        i++;
+    }
+
+    if(str[i] != '.') return false;
+    i++;
+
+    while (isdigit(str[i])){
+        i++;
+    }
+
+    
+
+    return str[i] == '\0';
+}
+
+
+bool isSpace(char chr){
+    return chr == ' ';
+}
+
+bool isTerminator(char chr){
+    return chr == ';';
+}
 
 bool isInteger(char *str){
     if (str == NULL || *str == '\0') {
@@ -154,28 +187,36 @@ int lexicalAnalyzer(char *str){
     while(right < len && left <= right){
 
         if(isDelimeter(str[right])){
-            
-            char * token = getSubString(str , left , right);
 
+            char * token = getSubString(str , left , right);
+            
+            
             if(isInteger(token)){
                 printf("INTEGER : \t%s\n" , token);
-
+            }else if(isFloat(token)){
+                printf("FLOAT : \t%s\n" , token);
             }else if(isKeyword(token)){
                 printf("KEYWORD : \t%s\n" , token);
             }else if(isValidIdentifier(token)){
                 printf("IDENTIFIER : \t%s\n" , token);
+            }else if(!strlen(token)){
+                // pass 0 length tokens
             }else{
                 error__unexpectedToken(token);
                 return 1;
             }
-
-
+            
+            
             if(isOperator(str[right])){
                 printf("OPERATOR : \t%c\n" , str[right]);
+            }else if(isSpace(str[right])){
+                // pass all spaces
+            }else if(isTerminator(str[right])){
+                printf("TERMINATOR : %c\n" , str[right]);
             }else{
-                printf("DELIMETER : \t%c\n" , str[right]);
+                printf("DELIMETER : %c\n" , str[right]);
             }
-            
+                
             right++;
             left = right;
             continue;
