@@ -19,5 +19,6 @@ bool TermTail();
 bool Factor();
 bool Assignment();
 bool isNull();
+bool getTokenNumber();
 
 #endif

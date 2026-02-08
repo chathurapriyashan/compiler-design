@@ -56,9 +56,8 @@ char logs[1024];
 
 
 
-void error(Token *t , char * str){
+void error(char * str){
     strcpy(logs , str);
-    printf("%s" , logs);
 }
 
 Token *err_token = NULL;
@@ -95,25 +94,26 @@ Statement → VarDecl ';'
 */
 int i = 0;
 bool Statement(){
+    
     tokenSave();
     bool v = VarDecl();
     
     if(v) {
         return true;
     }else{
+        error("variable declaration failed\n");
         setErrorToken(nextToken());
         tokenRollback();
-
+        
     }
     
     bool a = Assignment();
     if(a) {
-        printf("%d next %p\n" ,a , nextToken());
         return true;
     }else{
+        error("Invalid assignment operation\n");
         setErrorToken(nextToken());
         tokenRollback();
-
     }
     
 
@@ -122,35 +122,60 @@ bool Statement(){
     if(p){
         return true;
     }else{
+        error("print statement incorrect\n");
         setErrorToken(nextToken());
         tokenRollback();
+
     }
 
     bool e = Expr();
     if(e){
         return true;
     }else{
+        error("Invalid expression\n");
         setErrorToken(nextToken());
         tokenRollback();
     }
 
 
-    bool n = isNull();
-    if(n){
-        return true;
-    }else{
-        setErrorToken(nextToken());
-        tokenRollback();
-    }
+    // bool n = isNull();
+    // if(n){
+    //     return true;
+    // }else{
+    //     setErrorToken(nextToken());
+    //     tokenRollback();
+    // }
 
 
     return false;
+    
+
+    // tokenSave();
+    
+    // if (VarDecl()) return true;
+    // tokenRollback();
+    
+    // if (Assignment()) return true;
+    // tokenRollback();
+
+    // if (PrintStmt()) return true;
+    // tokenRollback();
+
+    // if (Expr()){
+    //     Token* t = nextToken();
+    //     if (t && t->type == SEMICOLON)
+    //         return true;
+    // }
+    // tokenRollback();
+
+    // return false;
     
 
 }
 // Assignment → id '=' Expr ';'
 bool Assignment(){
     Token *t = nextToken();
+
     if(t == NULL) return false;
     if(t->type == SEMICOLON) return true;
     
@@ -226,14 +251,14 @@ bool VarDecl(){
 bool PrintStmt(){
     Token *t = nextToken();
     if(t == NULL) return false;
-
+    
     if(t->type == PRINT){
         t = nextToken();
         if(t == NULL) return false;
         if(t->type != N_BRACKETS_OPEN)  return false;
         bool idl = IdList();
         if(!idl) return false;
-
+        
         t = nextToken();
         if(t == NULL) return false;
         if(t->type != N_BRACKETS_CLOSE)  return false;
@@ -271,6 +296,7 @@ IdListTail → ',' id IdListTail
 */
 bool IdListTail(){
     Token *t = nextToken();
+    if(t == NULL) return false;
 
     if(t->type == COMMA){
         bool idl = IdList();
@@ -284,8 +310,11 @@ bool IdListTail(){
 // Expr → Term ExprTail
 bool Expr(){
     bool t = Term();
+    if(!t) return false;
     bool et = ExprTail();
-    return t && et;
+    if(!et) return false;
+    
+    return true;
 }
 
 /*
@@ -348,6 +377,7 @@ int syntaxAnalyzer(){
     if(status == false){
         printTokenStream(getErrorToken());
         printf(" <<<<<<<< ERROR :: UNEXPECTED TOKEN\n");
+        printf("%s\n" , logs);
         
     }
 

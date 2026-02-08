@@ -246,13 +246,15 @@ bool isInteger(char *str){
 
 
 char* getSubString(char *str , int start , int end){
-    int len = end - start + 1;
-    char* subString = (char *)malloc(sizeof(char) * len);
-    for(int i = 0 ; i < len - 1 ; i++){
+    int len = end - start;
+
+    char* subString = (char *)malloc(sizeof(char) * len + 1);
+
+    for(int i = 0 ; i < len  ; i++){
         *(subString + i) =  str[start + i];
     }
 
-    *(subString + len) = '\0';
+    *(subString + len ) = '\0';
 
     return subString;
 }
@@ -355,6 +357,7 @@ Token* nextToken(){
         return next;
     }else{
         if(next == NULL) return NULL;
+        // printf("%s %p" , next->value , next);
         next = next->next;
         return next;
 
@@ -392,6 +395,7 @@ void tokenSave(){
         headMoved = false;
         headStatus = headMoved;
         saved = NULL;
+        savedCount = 0;
     }else if(tokenIndex == 0){
         saved = tokenStack;
         savedCount = numberOfToken;
@@ -566,4 +570,8 @@ Token* createToken(Type type , char* value ){
 
 bool islastToken(){
     return tokenCount == 0;
+}
+
+bool getTokenNumber(){
+    return tokenCount;
 }

@@ -11,7 +11,6 @@ int main(int argc , char** args){
     }
     
     char* content = getFileContent(args[1]);
-    // printf("\n\n%s\n\n" , content);
 
     int lexerStatus = lexicalAnalyzer(content);
     printTokens();   
@@ -20,7 +19,6 @@ int main(int argc , char** args){
 
     if(!lexerStatus) return 1;
 
-    
 
     int syntaxStatus = syntaxAnalyzer(); 
 

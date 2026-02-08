@@ -36,7 +36,7 @@ char* getFileContent(const char* filename) {
 
     fclose(fp);
 
-    *(content + size + 1) = '\0';
+    *(content + i) = '\0';
 
     return content;
     
