@@ -1,0 +1,47 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: clang build active file",
+            "command": "/usr/bin/clang",
+            "args": [
+                "-fcolor-diagnostics",
+                "-fansi-escape-codes",
+                "-g",
+                "./src/lexer/lexer.c",
+                "./src/semantic/semantic.c",
+                "./src/syntax/syntax.c",
+                "./src/symbols/symbols.c",
+                "./src/parser/parser.c",
+                "./src/helpers/files.c",
+                "./src/helpers/error.c",
+                "main.c",
+                "-o",
+                "${fileDirname}/out/compiler"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": ["$gcc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build the compiler executable"
+        },
+        {
+            "label": "Run compiler with input.txt",
+            "type": "shell",
+            "command": "${fileDirname}/out/compiler ${fileDirname}/input.txt",
+            "group": "test",
+            "dependsOn": "C/C++: clang build active file",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        }
+    ]
+}

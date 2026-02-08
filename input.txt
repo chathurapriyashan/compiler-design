@@ -1,9 +1,0 @@
-int y = 5.0 ;
-int x = 20 ;
-int z = x + y ;
-print(z);
-
-
-void add(int x , int y){
-    return x + y;
-}
