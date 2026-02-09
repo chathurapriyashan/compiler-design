@@ -13,17 +13,17 @@ int main(int argc , char** args){
     char* content = getFileContent(args[1]);
 
     int lexerStatus = lexicalAnalyzer(content);
-    printTokens();   
-    if(lexerStatus) printf("✅ Lexical Analysis Completed\n"); 
-    else printf("🚫 Lexical Analysis Failed\n"); 
+    // printTokens();   
+    // if(lexerStatus) printf("✅ Lexical Analysis Completed\n"); 
+    // else printf("🚫 Lexical Analysis Failed\n"); 
 
     if(!lexerStatus) return 1;
 
 
     int syntaxStatus = syntaxAnalyzer(); 
 
-    if(syntaxStatus) printf("✅ Syntax Analysis Completed\n"); 
-    else printf("🚫 Syntax Analysis Failed\n"); 
+    // if(syntaxStatus) printf("✅ Syntax Analysis Completed\n"); 
+    // else printf("🚫 Syntax Analysis Failed\n"); 
 
     if(!syntaxStatus) return 1;
 

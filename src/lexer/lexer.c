@@ -402,13 +402,13 @@ void tokenSave(){
     }
     
     while(i < tokenIndex ){
-        saved = saved->next;  
+        saved = saved;  
         i++;
     }
 }
 
 void tokenRollback(){
-    next = saved;
+    next = saved->next;
     tokenCount = savedCount;
     headMoved = headStatus;
 }
@@ -572,6 +572,10 @@ bool islastToken(){
     return tokenCount == 0;
 }
 
-bool getTokenNumber(){
+int getTokenNumber(){
     return tokenCount;
+}
+
+int getFullTokenCount(){
+    return numberOfToken;
 }

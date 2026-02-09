@@ -5,20 +5,18 @@
 
 
 int syntaxAnalyzer();
-bool Program();
-bool StatementList();
-bool Statement();
-bool VarDecl();
-bool PrintStmt();
-bool IdList();
-bool IdListTail();
-bool Expr();
-bool ExprTail();
-bool Term();
-bool TermTail();
-bool Factor();
-bool Assignment();
-bool isNull();
-bool getTokenNumber();
+void Program();
+void StatementList();
+void Statement();
+void VarDecl();
+void Assignment();
+void PrintStmt();
+void IdList();
+void IdListTail();
+int Expr();
+int ExprTail();
+int Term();
+int TermTail();
+int Factor();
 
 #endif

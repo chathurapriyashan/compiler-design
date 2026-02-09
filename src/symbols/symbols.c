@@ -1,85 +1,60 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "symbols.h"
-
-struct symbol{
-    char * name;
-    char * value;
-    struct symbol * next;
-    struct symbol * endOfLink; 
-} ;
-
-
-struct symbolTable{
-    struct symbolTable * parent;
-    Symbol * symbols;
-    struct symbolTable * childs;
-    struct symbolTable * next;
-} ;
+#include <string.h>
 
 
 
-SymbolTable *createScope(SymbolTable *parentScope){
-    SymbolTable* scope = (SymbolTable *) malloc(sizeof(SymbolTable));
-    scope->parent = parentScope;
-    scope->symbols = NULL;
-    return scope;
-}
+SymbolTable scope = {NULL , 0 , NULL , NULL};
 
 
-void deleteSymbol(Symbol * symbol){
-    free(symbol);
-}
 
-void deleteScope(SymbolTable *st){
-    if(st->symbols == NULL){
-        free(st);
+void insertToScope(Symbol *symbol){
+    if(scope.symbols == NULL){
+        scope.symbols = symbol;
         return;
     }
 
-    Symbol * symbol = st->symbols;
-    while (1){
-        Symbol * next = symbol->next;
-        free(symbol);
-        if(next == NULL) return;
-    }
-
-    free(st);
-    return;
-    
-}
-
-
-
-void insertToScope(SymbolTable * scope , Symbol * symbol){
-    
-    if(scope->symbols == NULL){
-        scope->symbols = symbol;
-        return;
-    }
-
-    Symbol* next = scope->symbols;
-
-    while (1){
+    Symbol *next = scope.symbols;
+    while(1){
         if(next->next == NULL){
             next->next = symbol;
+            next = next->next;
             return;
+        }else{
+            next = next->next;
         }
-
-        next = next->next;
+        
     }
-    
+
+    return ;
 }
 
 
-SymbolTable* createSymbol(SymbolTable *scope , char *name , char *value){
+Symbol* searchInScope(char *name){
+    Symbol *symbol = scope.symbols;
+    if(symbol == NULL) return NULL;
+    while(1){
+        if(strcmp(symbol->name ,name) == 0){
+            return symbol;
+        }else{
+            symbol = symbol->next;
+            if(symbol == NULL){
+                return NULL;
+            }
+        }
+
+    }    
+}
+
+
+Symbol* createSymbol(SymbolTable *scope , char *name){
     Symbol* symbol = (Symbol * )malloc(sizeof(Symbol));
     symbol->name = name;
-    symbol->value = value;
     symbol->next = NULL;
 
-    insertToScope(scope , symbol);
-    return scope;
+    insertToScope(symbol);
+    return symbol;
 }
 
 

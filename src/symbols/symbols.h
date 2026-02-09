@@ -1,25 +1,25 @@
 #ifndef SYMBOLS_H
 
-typedef struct symbol Symbol;
-typedef struct symbolTable SymbolTable;
+typedef struct symbol{
+    char * name;
+    int value;
+    struct symbol * next;
+    struct symbol * endOfLink; 
+} Symbol;
 
 
-SymbolTable *createScope(SymbolTable *parentScope);
-void deleteSymbol(Symbol * symbol);
-void deleteSymbol(Symbol * symbol);
-void deleteScope(SymbolTable *st);
-void insertToScope(SymbolTable * scope , Symbol * symbol);
-SymbolTable* createSymbol(SymbolTable *scope , char *name , char *value);
-
-
-
-
-
-
-
+typedef struct symbolTable{
+    struct symbolTable * parent;
+    Symbol * symbols;
+    struct symbolTable * childs;
+    struct symbolTable * next;
+}  SymbolTable;
 
 
 
+Symbol* createSymbol(SymbolTable *scope , char *name);
+Symbol* searchInScope(char *name);
+void insertToScope(Symbol *symbol);
 
 
 

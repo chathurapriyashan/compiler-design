@@ -1,4 +1,5 @@
 #ifndef LEXER_H
+#include <stdbool.h>
 // #define SPACE   0   // ' '
 // #define PLUS   1  // '+'
 // #define HYPHEN   2  // '-'
@@ -129,6 +130,8 @@ bool islastToken();
 void tokenSave();
 void tokenRollback();
 Token* previousToken();
+int getTokenNumber();
+int getFullTokenCount();
 
 
 

@@ -1,7 +1,10 @@
-#include "syntax.h"
-#include "../lexer/lexer.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include "../lexer/lexer.h"
+#include "syntax.h"
+#include "../symbols/symbols.h"
 #include <string.h>
+#include <stdlib.h>
 
 
 
@@ -51,335 +54,243 @@ Factor → '(' Expr ')'
 */
 
 
-char logs[1024]; 
+Token *lookahead;
 
-
-
-
-void error(char * str){
-    strcpy(logs , str);
+/* ---------- Error handling ---------- */
+void syntaxError(const char *msg) {
+    printf("Syntax Error: %s\n", msg);
+    if (lookahead)
+        printf("At token type %d, value '%s'\n", lookahead->type, lookahead->value);
+    exit(1);
 }
 
-Token *err_token = NULL;
-void setErrorToken(Token *t){
-    err_token = t;
-}
-
-Token *getErrorToken(){
-    return err_token;
-}
-
-// Program → StatementList
-bool Program(){
-    bool stl = StatementList();
-    return stl;
-}
-
-// StatementList → Statement StatementList
-bool StatementList(){
-    if(islastToken()) return true;
-
-    bool st = Statement();
-    if(!st) return false;
-
-
-    return StatementList();
-
-}
-/*
-Statement → VarDecl ';'
-           | Assignment ';'
-           | PrintStmt ';'
-           | Expr ;
-*/
-int i = 0;
-bool Statement(){
-    
-    tokenSave();
-    bool v = VarDecl();
-    
-    if(v) {
-        return true;
-    }else{
-        error("variable declaration failed\n");
-        setErrorToken(nextToken());
-        tokenRollback();
-        
-    }
-    
-    bool a = Assignment();
-    if(a) {
-        return true;
-    }else{
-        error("Invalid assignment operation\n");
-        setErrorToken(nextToken());
-        tokenRollback();
-    }
-    
-
-
-    bool p = PrintStmt();
-    if(p){
-        return true;
-    }else{
-        error("print statement incorrect\n");
-        setErrorToken(nextToken());
-        tokenRollback();
-
+/* ---------- Match function ---------- */
+Token* match(Type expected) {
+    Token *t = lookahead;
+    if (lookahead && lookahead->type == expected) {
+        lookahead = nextToken();  // consume
+        return t;
+    } else {
+        syntaxError("Unexpected token");
     }
 
-    bool e = Expr();
-    if(e){
-        return true;
-    }else{
-        error("Invalid expression\n");
-        setErrorToken(nextToken());
-        tokenRollback();
+    return NULL;
+}
+
+
+void Program() {
+    StatementList();
+}
+
+
+void StatementList() {
+    if (lookahead == NULL) return;
+
+    switch (lookahead->type) {
+        case INT:
+        case ID:
+        case PRINT:
+        case N_BRACKETS_OPEN:
+        case NUM_INT:
+        case NUM_FLOAT:
+            Statement();
+            StatementList();
+            break;
+        default:
+            return; // ε
+    }
+}
+
+
+void Statement() {
+    if (lookahead->type == INT) {
+        VarDecl();
+        match(SEMICOLON);
+    }
+    else if (lookahead->type == ID) {
+        Assignment();
+        match(SEMICOLON);
+    }
+    else if (lookahead->type == PRINT) {
+        PrintStmt();
+        match(SEMICOLON);
+    }
+    else {
+        int value = Expr();
+        match(SEMICOLON);
+    }
+}
+
+
+void VarDecl() {
+    match(INT);
+    Token *id = match(ID);
+    Symbol *idSymbol = createSymbol(NULL , id->value);
+    match(ASSIGN);
+    idSymbol->value = Expr();
+}
+
+
+void Assignment() {
+    Token *id = match(ID);
+    Symbol* idSymbol = searchInScope(id->value);
+    if(idSymbol == NULL){
+        printf("Assignment to non declared variable called : %s\n" , id->value); 
+        return;
     }
 
-
-    // bool n = isNull();
-    // if(n){
-    //     return true;
-    // }else{
-    //     setErrorToken(nextToken());
-    //     tokenRollback();
-    // }
-
-
-    return false;
-    
-
-    // tokenSave();
-    
-    // if (VarDecl()) return true;
-    // tokenRollback();
-    
-    // if (Assignment()) return true;
-    // tokenRollback();
-
-    // if (PrintStmt()) return true;
-    // tokenRollback();
-
-    // if (Expr()){
-    //     Token* t = nextToken();
-    //     if (t && t->type == SEMICOLON)
-    //         return true;
-    // }
-    // tokenRollback();
-
-    // return false;
-    
-
+    match(ASSIGN);
+    idSymbol->value = Expr();
 }
-// Assignment → id '=' Expr ';'
-bool Assignment(){
-    Token *t = nextToken();
 
-    if(t == NULL) return false;
-    if(t->type == SEMICOLON) return true;
-    
-    if(t->type == ID){
-        t = nextToken();        
-        if(t == NULL) return false;
-        if(t->type == ASSIGN){
-            bool e =  Expr();
-            if(!e) return false;
-            t = nextToken();
-            if(t == NULL) return false;
-            if(t->type == SEMICOLON) {
-                return true;
-            }
-            else return false;
-            
-        }else{
-            return false;
+
+void PrintStmt() {
+    match(PRINT);
+    match(N_BRACKETS_OPEN);
+    IdList();
+    match(N_BRACKETS_CLOSE);
+}
+
+
+void IdList() {
+    if (lookahead->type == ID) {
+        Token *id = match(ID);
+        Symbol *idSymbol = searchInScope(id->value);
+        if(idSymbol == NULL){
+            printf("undefined variable called : %s\n" , id->value);
+            return;
         }
-    }else{
-        return false;
+        printf("%d " , idSymbol->value);
+        IdListTail();
     }
-
-    return true;
-
+    else if (lookahead->type == NUM_INT || lookahead->type == NUM_FLOAT) {
+        match(lookahead->type);
+        IdListTail();
+    }
+    else {
+        syntaxError("Expected identifier or number in IdList");
+    }
 }
 
-bool isNull(){
-    Token *t = nextToken();
-    if(t == NULL) return true;
-    else return false;
-}
 
-bool VarDecl(){
-    Token *t = nextToken();
-    if(t == NULL) return false;
-    if(t->type == SEMICOLON) return true;
+void IdListTail() {
+    if (lookahead->type == COMMA) {
+        match(COMMA);
 
-
-    if(t->type == INT || t->type == FLOAT || t->type == DOUBLE || t->type == SHORT){
-        t = nextToken();
-        if(t->type == ID){
-            t = nextToken();
-            if(t == NULL) return false;
-            if(t->type == ASSIGN){
-                bool e = Expr();
-                if(!e) return false;
-                t = nextToken();
-                if(t == NULL) return false;
-                if(t->type == SEMICOLON){
-                    return true;
-                }else{
-                    return false;
-                }
-            }else if(t->type == SEMICOLON){
-                return true;
-            }else{
-                return false;
+        if (lookahead->type == ID) {
+            Token* id = match(ID);
+            Symbol *idSymbol = searchInScope(id->value);
+            if(idSymbol == NULL){
+                printf("undefined variable called : %s\n" , id->value);
+                return;
             }
-        }else{
-            return false;
+            printf("%d " , idSymbol->value);
+        }
+        else if (lookahead->type == NUM_INT || lookahead->type == NUM_FLOAT) {
+            match(lookahead->type);
+        }
+        else {
+            syntaxError("Expected id or number after comma");
         }
 
-    }else{
-        return false;
+        IdListTail();
     }
-
-    return false;
-
 }
 
-// PrintStmt → 'print' '(' IdList ')'
-bool PrintStmt(){
-    Token *t = nextToken();
-    if(t == NULL) return false;
-    
-    if(t->type == PRINT){
-        t = nextToken();
-        if(t == NULL) return false;
-        if(t->type != N_BRACKETS_OPEN)  return false;
-        bool idl = IdList();
-        if(!idl) return false;
-        
-        t = nextToken();
-        if(t == NULL) return false;
-        if(t->type != N_BRACKETS_CLOSE)  return false;
-        
-        t = nextToken();
-        if(t == NULL) return false;
-        if(t->type != SEMICOLON)  return false;
-        else return true;
-    }else{
-        return false;
+
+int Expr() {
+    int t = Term();
+    int e = ExprTail();
+    return t + e;
+}
+
+
+int ExprTail() {
+    if (lookahead->type == PLUS) {
+        match(PLUS);
+        int t = Term();
+        int e = ExprTail();
+        return t + e;
     }
-    return false;
-}
-
-/*
-IdList → id IdListTail
-        | num IdListTail    
-*/
-bool IdList(){
-    Token* t = nextToken();
-    if(t == NULL) return false;
-    if(t->type == ID || t->type == NUM_INT || t->type == NUM_FLOAT){
-        return IdListTail();
-    }else{
-        return false;
+    else if (lookahead->type == HYPHEN) {
+        match(HYPHEN);
+        int t = Term();
+        int e = ExprTail();
+        return -1 * t + e;
     }
-
-    return true;
-
-}
-/*
-IdListTail → ',' id IdListTail
-    | ',' num IdListTail
-    | ε
-*/
-bool IdListTail(){
-    Token *t = nextToken();
-    if(t == NULL) return false;
-
-    if(t->type == COMMA){
-        bool idl = IdList();
-        return idl;
-    }else{
-        previousToken();
-    }   
-    return true;
+    return 0;
 }
 
-// Expr → Term ExprTail
-bool Expr(){
-    bool t = Term();
-    if(!t) return false;
-    bool et = ExprTail();
-    if(!et) return false;
-    
-    return true;
+
+int Term() {
+    int f = Factor();
+    int t = TermTail();
+    return f + t;
 }
 
-/*
-ExprTail → '+' Term ExprTail
-          | '-' Term ExprTail
-          | ε
-*/
-bool ExprTail(){
-    Token* t = nextToken();
-    if(t == NULL) return false;
-    if(t->type == PLUS || t->type == HYPHEN){
-        bool t = Term();
-        return t && ExprTail();
 
-    }else{
-        previousToken();
+int TermTail() {
+    if (lookahead->type == MUL) {
+        match(MUL);
+        int f = Factor();
+        int t = TermTail();
     }
-
-    return true;
-}
-
-// Term → Factor TermTail
-bool Term(){
-    bool f = Factor();
-    bool tt = TermTail();
-    return f && tt;
-
-}
-
-bool TermTail(){
-    return true;
-
-}
-
-/*
-Factor → '(' Expr ')'
-        | id
-        | num
-
-*/
-bool Factor(){
-    Token *t = nextToken();
-    if(t == NULL) return false;
-    if(t->type == ID || t->type == NUM_INT || t->type == NUM_FLOAT) return true;
-
-    if(t->type == N_BRACKETS_OPEN){
-        bool e = Expr();
-        if(!e) return false;
-        t = nextToken();
-        if(t == NULL) return false;
-        if(t->type == N_BRACKETS_CLOSE) return true;
-        return true;
+    else if (lookahead->type == DIVIDE) {
+        match(DIVIDE);
+        int f = Factor();
+        int t = TermTail();
+        return f + t;
     }
-    return false;
+    else if (lookahead->type == MOD) {
+        match(MOD);
+        int f = Factor();
+        int t = TermTail();
+        return f + t;
+    }
+    return 0;
+
 }
 
 
-int syntaxAnalyzer(){
-    bool status = Program();
-    if(status == false){
-        printTokenStream(getErrorToken());
-        printf(" <<<<<<<< ERROR :: UNEXPECTED TOKEN\n");
-        printf("%s\n" , logs);
+
+int Factor() {
+    if (lookahead->type == N_BRACKETS_OPEN) {
+        match(N_BRACKETS_OPEN);
+        int e = Expr();
+        match(N_BRACKETS_CLOSE);
+        return e;
+    }
+    else if (lookahead->type == ID) {
+        Token *t = match(ID);
+        Symbol *s = searchInScope(t->value);
+        if(s == NULL){
+            printf("Undefined Variable called : %s\n" , t->value);
+            syntaxError("Undefined Variable \n");
+        }
+        return s->value;
+    }
+    else if (lookahead->type == NUM_INT || lookahead->type == NUM_FLOAT) {
+        Token *t = match(lookahead->type);
+        return atoi(t->value);
         
     }
+    else {
+        syntaxError("Invalid factor");
+    }
 
-    return status;
+    return 0;
 }
+
+
+int syntaxAnalyzer() {
+    lookahead = nextToken();  
+
+    Program();
+
+    if (lookahead != NULL) {
+        syntaxError("Extra tokens after program end");
+    }
+
+    return 1;
+}
+
